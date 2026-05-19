@@ -64,9 +64,19 @@ public class ScryfallClient : IScryfallClient
 
         ScryfallCard? card = null;
 
-        // Try as Scryfall id (UUID) first
         if (Guid.TryParse(trimmed, out _))
+        {
+            // Try as Scryfall card id first.
             card = await GetJsonAsync<ScryfallCard>($"cards/{trimmed}", ct);
+
+            // Then as an oracle id (one representative printing).
+            if (card is null)
+            {
+                var page = await GetJsonAsync<ScryfallList<ScryfallCard>>(
+                    $"cards/search?q=oracleid%3A{trimmed}&unique=cards&order=released&dir=asc", ct);
+                card = page?.Data?.FirstOrDefault();
+            }
+        }
 
         // Fall back to named (exact, then fuzzy)
         card ??= await GetJsonAsync<ScryfallCard>(
