@@ -3,4 +3,7 @@
   <Folder Name="/src/api/">
     <Project Path="src/api/MtGArtRanker.Api.csproj" />
   </Folder>
+  <Folder Name="/src/tools/">
+    <Project Path="src/tools/MigrateDb/MigrateDb.csproj" />
+  </Folder>
 </Solution>

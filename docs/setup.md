@@ -8,7 +8,10 @@ This guide covers the one-time setup needed to run MtGArtRanker locally and depl
 
 - .NET 8 SDK
 - Node.js 20+
-- SQL Server LocalDB (ships with Visual Studio) **or** Docker
+
+By default the API uses a **local SQLite file** for storage — no SQL Server,
+LocalDB, or Docker required. The file `src/api/mtgartranker.db` is created on
+first run (it's git-ignored).
 
 ### Steps
 
@@ -16,10 +19,8 @@ This guide covers the one-time setup needed to run MtGArtRanker locally and depl
 # Restore + build
 dotnet build MtGArtRanker.slnx
 
-# Apply migrations to LocalDB (or your local SQL)
-dotnet ef database update --project src/api
-
-# Run the API (http://localhost:5080, Swagger at /swagger)
+# Run the API (http://localhost:5080, Swagger at /swagger).
+# On first run it creates mtgartranker.db next to the API.
 dotnet run --project src/api
 
 # In a separate terminal, run the web app (http://localhost:5173)
@@ -28,7 +29,43 @@ npm install
 npm run dev
 ```
 
-The Vite dev server proxies `/api/*` to `http://localhost:5080`, so you can browse to <http://localhost:5173>.
+The Vite dev server proxies `/api/*` to `http://localhost:5080`, so you can
+browse to <http://localhost:5173>.
+
+### Switching to SQL Server for local testing (optional)
+
+If you'd rather use LocalDB / a containerized SQL Server, edit
+`src/api/appsettings.Development.json`:
+
+```jsonc
+{
+  "Database": { "Provider": "sqlserver", "AutoMigrate": true },
+  "ConnectionStrings": {
+    "Sql": "Server=(localdb)\\MSSQLLocalDB;Database=MtGArtRanker;Trusted_Connection=True;TrustServerCertificate=True"
+  }
+}
+```
+
+### Migrating your local SQLite data to a live SQL Server
+
+There's a small CLI tool that copies everything from the local SQLite file into
+an Azure SQL (or any SQL Server) database. It applies the EF Core migrations
+on the destination first, then upserts users, rankings, ranking items, and the
+metadata cache.
+
+```bash
+dotnet run --project src/tools/MigrateDb -- \
+  --from "Data Source=src/api/mtgartranker.db" \
+  --to   "Server=tcp:<your-sql>.database.windows.net,1433;Initial Catalog=mtgartranker;Authentication=Active Directory Default;Encrypt=True;"
+```
+
+- `--from` is the SQLite file (defaults to `Data Source=mtgartranker.db` in the
+  current working directory).
+- `--to` is the destination SQL Server connection string.
+- Add `--force` if the destination already contains rankings and you want to
+  merge into it.
+- The destination defaults to **idempotent**: re-running won't duplicate
+  rankings, and existing items are replaced.
 
 ## 2. Azure one-time setup
 

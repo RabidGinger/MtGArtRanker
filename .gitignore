@@ -25,9 +25,14 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
-appsettings.Development.json
 appsettings.*.Local.json
 local.settings.json
+
+# Local SQLite database (dev-only scratch storage)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
 *.pfx
 
 # Azure / Bicep

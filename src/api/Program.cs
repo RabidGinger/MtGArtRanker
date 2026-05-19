@@ -20,11 +20,21 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddMemoryCache();
 
-// EF Core (Azure SQL / LocalDB)
-var connectionString = builder.Configuration.GetConnectionString("Sql")
+// EF Core — provider is config-driven so local dev can use a SQLite file
+// while Azure runs SQL Server.
+var dbProvider = (builder.Configuration["Database:Provider"] ?? "sqlserver").ToLowerInvariant();
+var connectionString =
+    builder.Configuration.GetConnectionString("Sql")
     ?? builder.Configuration["Sql-ConnectionString"]
-    ?? "Server=(localdb)\\MSSQLLocalDB;Database=MtGArtRanker;Trusted_Connection=True;TrustServerCertificate=True";
-builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlServer(connectionString));
+    ?? (dbProvider == "sqlite"
+        ? "Data Source=mtgartranker.db"
+        : "Server=(localdb)\\MSSQLLocalDB;Database=MtGArtRanker;Trusted_Connection=True;TrustServerCertificate=True");
+
+builder.Services.AddDbContext<AppDbContext>(opt =>
+{
+    if (dbProvider == "sqlite") opt.UseSqlite(connectionString);
+    else opt.UseSqlServer(connectionString);
+});
 
 // Scryfall HTTP client — required User-Agent + Accept per Scryfall API guidelines
 builder.Services.AddHttpClient<IScryfallClient, ScryfallClient>(c =>
@@ -60,13 +70,16 @@ app.UseCors();
 app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
-// Auto-migrate on startup (safe for MVP; for prod consider a separate migration step)
+// Initialize the database. SQLite uses EnsureCreated (good enough for local
+// scratch storage — when migrating to live SQL the EF migrations are applied
+// instead). SQL Server uses real migrations.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     if (builder.Configuration.GetValue("Database:AutoMigrate", true))
     {
-        db.Database.Migrate();
+        if (db.Database.IsSqlite()) db.Database.EnsureCreated();
+        else db.Database.Migrate();
     }
 }
 
