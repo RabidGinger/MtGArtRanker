@@ -52,6 +52,10 @@ public class AppDbContext : DbContext
         {
             e.HasKey(x => x.IllustrationId);
             e.HasIndex(x => x.OracleId);
+
+            // Use the provider-native unbounded text type for the JSON payload.
+            e.Property(x => x.Payload).HasColumnType(
+                Database.IsSqlServer() ? "nvarchar(max)" : "TEXT");
         });
     }
 }

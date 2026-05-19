@@ -52,7 +52,7 @@ public class CardMetadataCache
 {
     public Guid IllustrationId { get; set; }
     public Guid OracleId { get; set; }
-    [Column(TypeName = "nvarchar(max)")]
+    // Column type is set per-provider in AppDbContext (nvarchar(max) on SQL Server, TEXT on SQLite).
     public string Payload { get; set; } = "{}";
     public DateTime CachedAt { get; set; } = DateTime.UtcNow;
 }
