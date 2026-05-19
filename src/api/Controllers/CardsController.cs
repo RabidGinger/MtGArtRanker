@@ -25,7 +25,11 @@ public class CardsController : ControllerBase
         string idOrName, CancellationToken ct)
     {
         var card = await _scryfall.GetCardAsync(idOrName, ct);
-        if (card is null || card.OracleId is null) return NotFound();
+        if (card is null || card.OracleId is null)
+            return Problem(
+                title: "Card not found",
+                detail: $"Scryfall has no card matching \"{idOrName}\".",
+                statusCode: StatusCodes.Status404NotFound);
         return Ok(new CardSummaryDto(card.OracleId.Value, card.Name, card.ScryfallUri));
     }
 
@@ -34,7 +38,11 @@ public class CardsController : ControllerBase
         string idOrName, CancellationToken ct)
     {
         var card = await _scryfall.GetCardAsync(idOrName, ct);
-        if (card is null || card.OracleId is null) return NotFound();
+        if (card is null || card.OracleId is null)
+            return Problem(
+                title: "Card not found",
+                detail: $"Scryfall has no card matching \"{idOrName}\".",
+                statusCode: StatusCodes.Status404NotFound);
 
         var printings = await _scryfall.GetUniquePrintingsAsync(
             card.OracleId.Value.ToString(), ct);
