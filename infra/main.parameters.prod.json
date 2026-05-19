@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": { "value": "prod" },
+    "location": { "value": "westus2" },
+    "resourcePrefix": { "value": "mtgartrank" },
+    "sqlAdminLogin": { "value": "sqladmin" },
+    "sqlAdminPassword": { "value": "REPLACE_AT_DEPLOY_TIME" },
+    "sqlEntraAdminObjectId": { "value": "REPLACE_WITH_YOUR_OID" },
+    "sqlEntraAdminLogin": { "value": "REPLACE_WITH_YOUR_UPN" },
+    "deployerPrincipalId": { "value": "" }
+  }
+}
